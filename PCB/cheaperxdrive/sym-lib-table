@@ -1,0 +1,4 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "motore")(type "KiCad")(uri "${KIPRJMOD}/motore.kicad_sym")(options "")(descr ""))
+)

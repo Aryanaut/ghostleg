@@ -2,4 +2,5 @@
   (version 7)
   (lib (name "motore")(type "KiCad")(uri "${KIPRJMOD}/motore.kicad_sym")(options "")(descr ""))
   (lib (name "ldo")(type "KiCad")(uri "${KIPRJMOD}/L7812/L7812.kicad_sym")(options "")(descr ""))
+  (lib (name "diode")(type "KiCad")(uri "${KIPRJMOD}/1N5824/1N5824.kicad_sym")(options "")(descr ""))
 )

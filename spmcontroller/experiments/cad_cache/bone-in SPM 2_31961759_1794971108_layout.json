@@ -1,0 +1,55 @@
+{
+ "centre": [
+  -23.31779977051075,
+  32.50597000247968,
+  129.85446112820307
+ ],
+ "legs": [
+  {
+   "ring": "NAUO16",
+   "arm": "NAUO15",
+   "mid": "NAUO8"
+  },
+  {
+   "ring": "NAUO11",
+   "arm": "NAUO3",
+   "mid": "NAUO12"
+  },
+  {
+   "ring": "NAUO7",
+   "arm": "NAUO5",
+   "mid": "NAUO10"
+  }
+ ],
+ "femur": [
+  "NAUO2",
+  "NAUO13",
+  "NAUO17",
+  "NAUO9"
+ ],
+ "fixed": [
+  "NAUO1",
+  "NAUO4",
+  "NAUO6",
+  "NAUO14"
+ ],
+ "names": {
+  "NAUO1": "Helical 1M 18T",
+  "NAUO2": "femur head",
+  "NAUO3": "arm2",
+  "NAUO4": "casing",
+  "NAUO5": "arm3",
+  "NAUO6": "Helical 1M 18T",
+  "NAUO7": "Helical 1M 108T",
+  "NAUO8": "Part 12",
+  "NAUO9": "positioning key",
+  "NAUO10": "Part 11",
+  "NAUO11": "Helical 1M 108T",
+  "NAUO12": "Part 13",
+  "NAUO13": "upper femur",
+  "NAUO14": "Helical 1M 18T",
+  "NAUO15": "arm1",
+  "NAUO16": "internal gear 108T",
+  "NAUO17": "lower femur"
+ }
+}

@@ -1,0 +1,149 @@
+{
+  "geometry": {
+    "_help": "Angles in degrees, one value per leg (leg i is driven by motors[i]). alpha1: ring axis(-z) -> middle joint axis. alpha2: middle joint axis -> head joint axis. beta: effector axis -> head joint axis. eta: azimuth of each head joint around the effector axis. branch: +1/-1 elbow direction of each leg (flip if the 3D view doesn't match the CAD at home).",
+    "alpha1_deg": [
+      45.0,
+      45.0,
+      45.0
+    ],
+    "alpha2_deg": [
+      90.0,
+      90.0,
+      90.0
+    ],
+    "beta_deg": [
+      90.0,
+      90.0,
+      90.0
+    ],
+    "eta_deg": [
+      144.446,
+      24.446,
+      -95.554
+    ],
+    "branch": [
+      -1,
+      -1,
+      -1
+    ],
+    "_source": "cad_to_config.py on bone-in SPM 2.step"
+  },
+  "mount": {
+    "_help": "How the SPM base sits on the pelvis. The ring axis (base -> head) points laterally, tipped down by tilt_down_deg and swung forward by forward_deg. base_twist_deg spins the base about its own axis.",
+    "side": "right",
+    "tilt_down_deg": 38.0,
+    "forward_deg": 8.31,
+    "base_twist_deg": -5.14,
+    "_source": "cad_to_config.py on bone-in SPM 2.step: CAD pose = neutral, RIGHT femur"
+  },
+  "neutral": {
+    "_help": "Effector orientation (in the base frame) at anatomical neutral, as rotations from the mechanism's symmetric home: R = Rz(twist) Ry(tilt_y) Rx(tilt_x). From the CAD this design stands 17.9 deg away from the symmetric home at neutral.",
+    "tilt_x_deg": -5.5396,
+    "tilt_y_deg": -6.754,
+    "twist_deg": 16.7142,
+    "_source": "cad_to_config.py on bone-in SPM 2.step: femur standing (vertical from the marked ground face)"
+  },
+  "femur": {
+    "neck_length_m": 0.05,
+    "mech_length_m": 0.445,
+    "head_radius_m": 0.024
+  },
+  "motors": [
+    {
+      "address": 1,
+      "direction": 1
+    },
+    {
+      "address": 2,
+      "direction": 1
+    },
+    {
+      "address": 3,
+      "direction": 1
+    }
+  ],
+  "control": {
+    "gear_ratio": 6.0,
+    "loop_hz": 50,
+    "max_rate_deg_s": 90,
+    "sync_threshold_deg": 0.5,
+    "acc": 250,
+    "min_motor_rpm": 2,
+    "max_motor_rpm": 600,
+    "speed_headroom": 1.3,
+    "read_feedback": true
+  },
+  "limits": {
+    "_help": "Safety gate. Poses failing any check are refused and the last safe pose is held. min_ring_separation_deg and joint_limits are link collisions measured from the CAD (experiments/cad_collision.py): arms touch at 43.5 deg ring separation (+1.5 deg margin); elbow/wrist = passive-joint fold intervals from neutral. All other part pairs keep >= 4.8 mm inside these limits. max_tilt_deg is only a backstop (not binding with the CAD limits).",
+    "max_tilt_deg": 45,
+    "min_leg_margin": 0.02,
+    "min_parallel_index": 0.15,
+    "min_serial_index": 0.15,
+    "min_ring_separation_deg": 18.3,
+    "max_ring_excursion_deg": 120,
+    "joint_limits": {
+      "_source": "experiments/cad_collision.py on bone-in SPM 2.step: contact (< 0.3 mm) angles relative to the CAD assembly pose (ref_R_BE); +-180 = never collides",
+      "ref_R_BE": [
+        [
+          0.960122871,
+          -0.065747598,
+          -0.271737603
+        ],
+        [
+          0.0,
+          0.971954989,
+          -0.23516696
+        ],
+        [
+          0.279578382,
+          0.225789177,
+          0.933196215
+        ]
+      ],
+      "elbow_deg": [
+        [
+          -16.0,
+          180.0
+        ],
+        [
+          -53.0,
+          175.0
+        ],
+        [
+          -180.0,
+          180.0
+        ]
+      ],
+      "wrist_deg": [
+        [
+          -166.0,
+          171.0
+        ],
+        [
+          -180.0,
+          180.0
+        ],
+        [
+          -180.0,
+          78.0
+        ]
+      ],
+      "margin_deg": 3.0
+    },
+    "_help_v2": "v2 arm contact: legs 1-2 at 16.8 deg, legs 2-3 and 1-3 at 8.9 deg ring separation; the gate uses the largest (16.8) + 1.5 margin for every pair. Pose-dependent pairs: closest 1.31 mm (middle links 3 vs 1) at flex 85 / add 25 / rot -40."
+  },
+  "serial": {
+    "port": "COM3",
+    "baud": 38400
+  },
+  "visual": {
+    "r_prox_m": 0.092,
+    "r_dist_m": 0.055
+  },
+  "imu": {
+    "_help": "Femur IMU board over USB. trim_gain (1/s) > 0 closes an outer loop on the IMU-measured TILT error (0 = monitor only). trim_limit_deg caps the correction.",
+    "port": "",
+    "trim_gain": 0.0,
+    "trim_limit_deg": 3.0
+  }
+}

@@ -1,0 +1,371 @@
+From 65de5b404daf3a730a380295b5c4730ab4b1e66e Mon Sep 17 00:00:00 2001
+From: Marcus <marcus_quek2@mymail.sutd.edu.sg>
+Date: Tue, 17 Nov 2026 22:00:34 +0800
+Subject: [PATCH 1/2] feat: stream raw IMU + mag over USB Serial/JTAG for the
+ SPM hip rig
+
+All USB output after boot is framed (A5 96 type len payload crc16), including
+ESP_LOG text, so the PC can decode 240 Hz raw samples without log lines
+corrupting them. The UART link to Avionics C is unchanged.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01GokjBjLdGgMBmUBMSAFEQa
+---
+ .../main/CMakeLists.txt                       |   4 +-
+ MARCUS-ESP32-DEV-BOARD-Software/main/bridge.c |   3 +
+ .../main/magnetometer.c                       |   2 +
+ MARCUS-ESP32-DEV-BOARD-Software/main/main.c   |   6 +
+ .../main/usb_stream.c                         | 194 ++++++++++++++++++
+ .../main/usb_stream.h                         |  63 ++++++
+ 6 files changed, 270 insertions(+), 2 deletions(-)
+ create mode 100644 MARCUS-ESP32-DEV-BOARD-Software/main/usb_stream.c
+ create mode 100644 MARCUS-ESP32-DEV-BOARD-Software/main/usb_stream.h
+
+diff --git a/MARCUS-ESP32-DEV-BOARD-Software/main/CMakeLists.txt b/MARCUS-ESP32-DEV-BOARD-Software/main/CMakeLists.txt
+index c367001..d279930 100755
+--- a/MARCUS-ESP32-DEV-BOARD-Software/main/CMakeLists.txt
++++ b/MARCUS-ESP32-DEV-BOARD-Software/main/CMakeLists.txt
+@@ -1,7 +1,7 @@
+ idf_component_register(SRCS "sim_replay.c" "main.c" "bridge.c" "tb_log.c" "imu_polling.c" "imu_link.c"
+                             "nor_log.c" "storage.c" "sdcard.c"
+-                            "sensor_data.c" "barometer.c" "magnetometer.c"
+-                       PRIV_REQUIRES esp_driver_gpio esp_driver_spi esp_driver_uart esp_driver_i2c esp_timer
++                            "sensor_data.c" "barometer.c" "magnetometer.c" "usb_stream.c"
++                       PRIV_REQUIRES esp_driver_gpio esp_driver_spi esp_driver_uart esp_driver_i2c esp_driver_usb_serial_jtag esp_ringbuf esp_timer
+                                      spi_flash nvs_flash fatfs bmp390 mmc5983ma lsm6dsv80x
+                        INCLUDE_DIRS ""
+                        )
+diff --git a/MARCUS-ESP32-DEV-BOARD-Software/main/bridge.c b/MARCUS-ESP32-DEV-BOARD-Software/main/bridge.c
+index 94c6fcf..985d993 100644
+--- a/MARCUS-ESP32-DEV-BOARD-Software/main/bridge.c
++++ b/MARCUS-ESP32-DEV-BOARD-Software/main/bridge.c
+@@ -17,6 +17,7 @@ float    bridge_sim_baro_alt_m(void) { return s_sim_baro_alt_m; }
+ #endif
+ #include "pins.h"
+ #include "imu_link.h"
++#include "usb_stream.h"   // SPM rig: same samples, raw, to the PC over USB
+ 
+ #include <string.h>
+ #include <esp_log.h>
+@@ -150,6 +151,8 @@ static void bridge_task(void *pvParameters) {
+             imu_link_finalize(&pkt);
+ 
+             int written = uart_write_bytes(IMU_LINK_UART_PORT, &pkt, sizeof(pkt));
++            // Same sample, same seq/timestamp, to the PC over USB (non-blocking).
++            usb_stream_send_imu(count, pkt.t_us, s);
+             count++;
+             if (written != (int)sizeof(pkt)) s_stats.uart_errors++; else s_stats.packets_sent++;
+             if ((s->flags & (IMU_LINK_FLAG_XL | IMU_LINK_FLAG_HG | IMU_LINK_FLAG_GY)) !=
+diff --git a/MARCUS-ESP32-DEV-BOARD-Software/main/magnetometer.c b/MARCUS-ESP32-DEV-BOARD-Software/main/magnetometer.c
+index decd6e1..0045be9 100644
+--- a/MARCUS-ESP32-DEV-BOARD-Software/main/magnetometer.c
++++ b/MARCUS-ESP32-DEV-BOARD-Software/main/magnetometer.c
+@@ -1,5 +1,6 @@
+ #include "magnetometer.h"
+ #include "sensor_data.h"
++#include "usb_stream.h"
+ 
+ #include <freertos/FreeRTOS.h>
+ #include <freertos/task.h>
+@@ -62,4 +63,5 @@ void magnetometer_update(void) {
+     }
+ 
+     sensor_data_update_mag(mag_data, last_temp);
++    usb_stream_send_mag(mag_data, last_temp);   // SPM rig: raw field to the PC
+ }
+diff --git a/MARCUS-ESP32-DEV-BOARD-Software/main/main.c b/MARCUS-ESP32-DEV-BOARD-Software/main/main.c
+index 693a021..6d1723f 100755
+--- a/MARCUS-ESP32-DEV-BOARD-Software/main/main.c
++++ b/MARCUS-ESP32-DEV-BOARD-Software/main/main.c
+@@ -31,6 +31,7 @@
+ #include "sensor_data.h"
+ #include "barometer.h"
+ #include "magnetometer.h"
++#include "usb_stream.h"
+ 
+ #define TAG "main"
+ 
+@@ -68,6 +69,11 @@ static void spi_cs_idle_init(void) {
+ }
+ 
+ void app_main(void) {
++    // SPM rig build: frame everything on the USB port from the very start, so
++    // the PC can decode raw IMU/mag samples with the log text interleaved.
++    if (usb_stream_init() != ESP_OK) {
++        ESP_LOGE(TAG, "USB sensor stream failed to start - continuing without it");
++    }
+     ESP_LOGI(TAG, "=== Space Bar Training Board: IMU-over-UART bridge + datalogger for Avionics C ===");
+ #if SIM_REPLAY
+     ESP_LOGW(TAG, "%s", sim_replay_describe());
+diff --git a/MARCUS-ESP32-DEV-BOARD-Software/main/usb_stream.c b/MARCUS-ESP32-DEV-BOARD-Software/main/usb_stream.c
+new file mode 100644
+index 0000000..4305f38
+--- /dev/null
++++ b/MARCUS-ESP32-DEV-BOARD-Software/main/usb_stream.c
+@@ -0,0 +1,194 @@
++// Raw sensor stream over USB Serial/JTAG - see usb_stream.h for the protocol.
++//
++// Data flow:
++//   producers (IMU bridge task @240 Hz, mag in the log task, ESP_LOG anywhere)
++//     -> build one complete frame on their own stack
++//     -> xRingbufferSend(..., timeout 0)           atomic, never blocks the IMU
++//   usb_writer task (core 0, low priority)
++//     -> xRingbufferReceive -> usb_serial_jtag_write_bytes
++// A NOSPLIT ring buffer stores each frame as one item, so frames are written
++// whole and in order. When the PC is not draining the port the ring fills and
++// new frames are dropped (counted in INFO), which is the right failure mode
++// for a live stream: the IMU path keeps its timing.
++#include "usb_stream.h"
++#include "imu_link.h"          // imu_link_crc16()
++#include "lsm6dsv80x_reg.h"    // LSB -> unit conversions (for INFO scale factors)
++
++#include <stdarg.h>
++#include <stdio.h>
++#include <string.h>
++#include <esp_log.h>
++#include <esp_timer.h>
++#include <freertos/FreeRTOS.h>
++#include <freertos/task.h>
++#include <freertos/ringbuf.h>
++#include <driver/usb_serial_jtag.h>
++
++#define TAG "usb_stream"
++
++#define RING_BYTES        (16 * 1024)   // ~0.5 s of IMU frames at 240 Hz
++#define USB_TX_BUF_BYTES  4096          // driver's own TX buffer
++#define WRITER_PRIORITY   4             // same as sd_writer, below tb_log (5); core 0, so never competes with the IMU bridge on core 1
++#define WRITER_CORE       0
++#define INFO_PERIOD_US    1000000
++#define FRAME_OVERHEAD    6             // sync0 sync1 type len + crc16
++
++static RingbufHandle_t s_ring = NULL;
++static volatile uint32_t s_dropped = 0;
++static volatile uint32_t s_imu_frames = 0;
++static vprintf_like_t s_prev_vprintf = NULL;
++
++// ---- frame building ---------------------------------------------------------
++
++// Build a frame into `out` (which must hold len + FRAME_OVERHEAD bytes) and
++// return its total length.
++static size_t build_frame(uint8_t *out, uint8_t type, const void *payload, uint8_t len) {
++    out[0] = USB_STREAM_SYNC0;
++    out[1] = USB_STREAM_SYNC1;
++    out[2] = type;
++    out[3] = len;
++    if (len) memcpy(&out[4], payload, len);
++    uint16_t crc = imu_link_crc16(&out[2], (size_t)len + 2);   // over type, len, payload
++    out[4 + len] = (uint8_t)(crc & 0xFF);
++    out[5 + len] = (uint8_t)(crc >> 8);
++    return (size_t)len + FRAME_OVERHEAD;
++}
++
++// Queue one frame without blocking. Returns false (and counts a drop) if the
++// ring is full or the stream is not running.
++static bool push_frame(uint8_t type, const void *payload, uint8_t len, TickType_t wait) {
++    if (!s_ring) return false;
++    uint8_t frame[USB_STREAM_MAX_PAYLOAD + FRAME_OVERHEAD];
++    size_t n = build_frame(frame, type, payload, len);
++    if (xRingbufferSend(s_ring, frame, n, wait) != pdTRUE) {
++        s_dropped++;
++        return false;
++    }
++    return true;
++}
++
++// ---- producers ---------------------------------------------------------------
++
++typedef struct __attribute__((packed)) {
++    uint32_t seq;
++    uint32_t t_us;
++    int16_t  xl[3];
++    int16_t  gy[3];
++    int16_t  hg[3];
++    uint8_t  flags;
++} imu_payload_t;                       // 27 bytes
++_Static_assert(sizeof(imu_payload_t) == 27, "IMU payload layout changed - bump USB_STREAM_PROTO");
++
++void usb_stream_send_imu(uint32_t seq, uint32_t t_us, const imu_sample_t *s) {
++    imu_payload_t p = { .seq = seq, .t_us = t_us, .flags = s->flags };
++    memcpy(p.xl, s->xl, sizeof(p.xl));
++    memcpy(p.gy, s->gy, sizeof(p.gy));
++    memcpy(p.hg, s->hg, sizeof(p.hg));
++    if (push_frame(USB_STREAM_T_IMU, &p, sizeof(p), 0)) s_imu_frames++;   // 0 = never block the bridge
++}
++
++typedef struct __attribute__((packed)) {
++    uint32_t t_us;
++    float    mag[3];
++    float    temp;
++} mag_payload_t;                       // 20 bytes
++_Static_assert(sizeof(mag_payload_t) == 20, "MAG payload layout changed - bump USB_STREAM_PROTO");
++
++void usb_stream_send_mag(const float mag_ut[3], float temp_c) {
++    mag_payload_t p = { .t_us = (uint32_t)esp_timer_get_time(), .temp = temp_c };
++    memcpy(p.mag, mag_ut, sizeof(p.mag));
++    push_frame(USB_STREAM_T_MAG, &p, sizeof(p), 0);
++}
++
++typedef struct __attribute__((packed)) {
++    uint8_t  proto;
++    uint16_t odr_hz;
++    float    xl_mg_per_lsb;
++    float    gy_mdps_per_lsb;
++    float    hg_mg_per_lsb;
++    uint32_t dropped;
++    uint32_t imu_frames;
++    uint32_t uptime_ms;
++} info_payload_t;                      // 27 bytes
++_Static_assert(sizeof(info_payload_t) == 27, "INFO payload layout changed - bump USB_STREAM_PROTO");
++
++static void send_info(void) {
++    info_payload_t p = {
++        .proto = USB_STREAM_PROTO,
++        .odr_hz = IMU_LINK_RATE_HZ,
++        // The conversion macros in imu.h are linear, so converting 1 LSB gives
++        // the sensitivity for whatever full scale this build was compiled with.
++        .xl_mg_per_lsb = LG_ACCEL_TO_MG(1),
++        .gy_mdps_per_lsb = GYRO_TO_MDPS(1),
++        .hg_mg_per_lsb = HG_ACCEL_TO_MG(1),
++        .dropped = s_dropped,
++        .imu_frames = s_imu_frames,
++        .uptime_ms = (uint32_t)(esp_timer_get_time() / 1000),
++    };
++    push_frame(USB_STREAM_T_INFO, &p, sizeof(p), 0);
++}
++
++// ESP_LOG redirection: format the line, then ship it as one or more TEXT
++// frames. Blocks for at most a few ms if the ring is full (log calls never
++// come from the IMU bridge's sample loop).
++static int usb_log_vprintf(const char *fmt, va_list ap) {
++    char line[512];
++    int n = vsnprintf(line, sizeof(line), fmt, ap);
++    if (n <= 0) return n;
++    int len = n < (int)sizeof(line) ? n : (int)sizeof(line) - 1;
++    for (int off = 0; off < len; off += USB_STREAM_MAX_PAYLOAD) {
++        int chunk = len - off > USB_STREAM_MAX_PAYLOAD ? USB_STREAM_MAX_PAYLOAD : len - off;
++        push_frame(USB_STREAM_T_TEXT, &line[off], (uint8_t)chunk, pdMS_TO_TICKS(5));
++    }
++    return n;
++}
++
++// ---- writer task ---------------------------------------------------------------
++
++static void usb_writer_task(void *arg) {
++    int64_t next_info = esp_timer_get_time() + INFO_PERIOD_US;
++    while (1) {
++        size_t len = 0;
++        uint8_t *item = (uint8_t *)xRingbufferReceive(s_ring, &len, pdMS_TO_TICKS(50));
++        if (item) {
++            // Only write while a host has the port open; otherwise the driver
++            // would sit on its timeout and the ring would back up for nothing.
++            if (usb_serial_jtag_is_connected()) {
++                int w = usb_serial_jtag_write_bytes(item, len, pdMS_TO_TICKS(20));
++                if (w != (int)len) s_dropped++;
++            } else {
++                s_dropped++;
++            }
++            vRingbufferReturnItem(s_ring, item);
++        }
++        int64_t now = esp_timer_get_time();
++        if (now >= next_info) {
++            send_info();
++            next_info = now + INFO_PERIOD_US;
++        }
++    }
++}
++
++esp_err_t usb_stream_init(void) {
++    usb_serial_jtag_driver_config_t cfg = {
++        .tx_buffer_size = USB_TX_BUF_BYTES,
++        .rx_buffer_size = 256,
++    };
++    esp_err_t err = usb_serial_jtag_driver_install(&cfg);
++    if (err != ESP_OK) return err;
++
++    s_ring = xRingbufferCreate(RING_BYTES, RINGBUF_TYPE_NOSPLIT);
++    if (!s_ring) return ESP_ERR_NO_MEM;
++
++    if (xTaskCreatePinnedToCore(usb_writer_task, "usb_writer", 3072, NULL,
++                                WRITER_PRIORITY, NULL, WRITER_CORE) != pdPASS) {
++        return ESP_FAIL;
++    }
++    // From here on every ESP_LOG line is framed. (Bootloader / panic output
++    // still goes out raw; the host prints unframed bytes as text.)
++    s_prev_vprintf = esp_log_set_vprintf(usb_log_vprintf);
++    ESP_LOGI(TAG, "USB sensor stream v%d up: IMU %d Hz + mag + framed logs", USB_STREAM_PROTO, IMU_LINK_RATE_HZ);
++    return ESP_OK;
++}
++
++uint32_t usb_stream_dropped(void) { return s_dropped; }
+diff --git a/MARCUS-ESP32-DEV-BOARD-Software/main/usb_stream.h b/MARCUS-ESP32-DEV-BOARD-Software/main/usb_stream.h
+new file mode 100644
+index 0000000..2213fbe
+--- /dev/null
++++ b/MARCUS-ESP32-DEV-BOARD-Software/main/usb_stream.h
+@@ -0,0 +1,63 @@
++#ifndef USB_STREAM_H
++#define USB_STREAM_H
++// ---------------------------------------------------------------------------
++// Raw sensor stream to a PC over the ESP32-S3's native USB Serial/JTAG port
++// (the same USB-C port used for flashing / logs). Added for the SPM hip-joint
++// rig: the board is rigidly mounted on the femur standoff, and the laptop
++// fuses these raw samples into the end-effector's orientation and angular
++// velocity (spmcontroller/spm/imu_board.py).
++//
++// Everything that leaves the USB port after usb_stream_init() is framed -
++// including ESP_LOG text, which is re-routed into TEXT frames - so log lines
++// can never land in the middle of a binary sample.
++//
++// Frame (little-endian, no padding):
++//   [0]      0xA5          sync 0
++//   [1]      0x96          sync 1 (differs from the UART link's 0x58, so the
++//                          two protocols can never be confused)
++//   [2]      type          USB_STREAM_T_*
++//   [3]      len           payload length, 0..USB_STREAM_MAX_PAYLOAD
++//   [4..]    payload
++//   [4+len]  crc16 (LE)    CRC-16/CCITT-FALSE over bytes [2 .. 3+len]
++//                          (type, len and payload; same CRC as imu_link.c)
++//
++// Payloads:
++//   IMU  (0x01, 27 B, one per IMU sample, 240 Hz):
++//        u32 seq | u32 t_us | i16 xl[3] | i16 gy[3] | i16 hg[3] | u8 flags
++//        raw LSB, sensor axes; t_us = the same free-running sample clock that
++//        is sent on the UART link (one period per sample, monotonic).
++//   MAG  (0x02, 20 B, ~100 Hz): u32 t_us | f32 mag_uT[3] | f32 temp_C
++//   TEXT (0x03, n B): one chunk of ESP_LOG output (UTF-8, no terminator)
++//   INFO (0x04, 27 B, 1 Hz):
++//        u8 proto | u16 odr_hz | f32 xl_mg_per_lsb | f32 gy_mdps_per_lsb |
++//        f32 hg_mg_per_lsb | u32 frames_dropped | u32 imu_frames | u32 uptime_ms
++//        The host takes its scale factors from here, so changing the IMU full
++//        scale in imu.h needs no host change.
++// ---------------------------------------------------------------------------
++#include <stdint.h>
++#include <esp_err.h>
++#include "imu.h"
++
++#define USB_STREAM_PROTO        1
++#define USB_STREAM_SYNC0        0xA5
++#define USB_STREAM_SYNC1        0x96
++#define USB_STREAM_MAX_PAYLOAD  240
++
++#define USB_STREAM_T_IMU   0x01
++#define USB_STREAM_T_MAG   0x02
++#define USB_STREAM_T_TEXT  0x03
++#define USB_STREAM_T_INFO  0x04
++
++// Install the USB Serial/JTAG driver, start the writer task (core 0) and
++// redirect ESP_LOG output into TEXT frames. Call first thing in app_main.
++esp_err_t usb_stream_init(void);
++
++// Non-blocking producers. Safe to call from any task (not from an ISR).
++// If the PC is not reading, frames are dropped and counted - never blocking
++// the IMU bridge task.
++void usb_stream_send_imu(uint32_t seq, uint32_t t_us, const imu_sample_t *s);
++void usb_stream_send_mag(const float mag_ut[3], float temp_c);
++
++uint32_t usb_stream_dropped(void);
++
++#endif // USB_STREAM_H
+-- 
+2.43.0
+

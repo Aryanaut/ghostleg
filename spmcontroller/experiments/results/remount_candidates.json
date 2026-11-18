@@ -1,0 +1,182 @@
+{
+ "today": {
+  "neutral": [
+   15.449,
+   -9.108,
+   0
+  ],
+  "gait_scale": 0.55,
+  "worst_scale_within_build_tolerance": 0.2,
+  "rom": {
+   "flex-": "-83.5 (excursion)",
+   "flex+": "+25.5 (ring_sep)",
+   "add-": "-34.0 (ring_sep)",
+   "add+": "+16.5 (ring_sep)",
+   "rot-": "-49.0 (ring_sep)",
+   "rot+": "+24.5 (joints)"
+  },
+  "mount": [
+   24.6,
+   -20.1,
+   91.5
+  ],
+  "head_part_change_deg": 0.0,
+  "head_part_change_axis_pelvis_XYZ": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "cad_clearance_gait_x1": [
+   null,
+   "gait not reachable"
+  ],
+  "cad_clearance_gait_xmax": [
+   null,
+   ""
+  ]
+ },
+ "symmetric home": {
+  "neutral": [
+   0,
+   0,
+   0
+  ],
+  "gait_scale": 1.3,
+  "worst_scale_within_build_tolerance": 1.0,
+  "rom": {
+   "flex-": "-54.0 (ring_sep)",
+   "flex+": "+58.0 (ring_sep)",
+   "add-": "-31.0 (ring_sep)",
+   "add+": "+28.5 (joints)",
+   "rot-": "-36.0 (joints)",
+   "rot+": "+37.5 (joints)"
+  },
+  "mount": [
+   34.4,
+   -2.8,
+   94.2
+  ],
+  "head_part_change_deg": 17.9,
+  "head_part_change_axis_pelvis_XYZ": [
+   -0.438,
+   -0.69,
+   -0.577
+  ],
+  "cad_clearance_gait_x1": [
+   15.0,
+   "middle arm [mid2] <-> arm2 [leg1]"
+  ],
+  "cad_clearance_gait_xmax": [
+   9.950179466995499,
+   "middle arm [mid2] <-> middle arm [mid0]"
+  ]
+ },
+ "A: robust x1.45 (recommended)": {
+  "neutral": [
+   -10,
+   5,
+   0
+  ],
+  "gait_scale": 1.75,
+  "worst_scale_within_build_tolerance": 1.45,
+  "rom": {
+   "flex-": "-32.0 (ring_sep)",
+   "flex+": "+71.5 (excursion)",
+   "add-": "-30.5 (ring_sep)",
+   "add+": "+35.0 (joints)",
+   "rot-": "-22.5 (joints)",
+   "rot+": "+49.5 (joints)"
+  },
+  "mount": [
+   38.3,
+   10.2,
+   93.5
+  ],
+  "head_part_change_deg": 29.0,
+  "head_part_change_axis_pelvis_XYZ": [
+   -0.423,
+   -0.724,
+   -0.545
+  ],
+  "cad_clearance_gait_x1": [
+   15.0,
+   "middle arm [mid2] <-> arm2 [leg1]"
+  ],
+  "cad_clearance_gait_xmax": [
+   11.071398375636392,
+   "middle arm [mid2] <-> middle arm [mid0]"
+  ]
+ },
+ "B: robust x1.3, smaller change": {
+  "neutral": [
+   -5,
+   5,
+   0
+  ],
+  "gait_scale": 1.6,
+  "worst_scale_within_build_tolerance": 1.3,
+  "rom": {
+   "flex-": "-40.5 (ring_sep)",
+   "flex+": "+66.5 (ring_sep)",
+   "add-": "-28.5 (ring_sep)",
+   "add+": "+34.0 (joints)",
+   "rot-": "-29.0 (joints)",
+   "rot+": "+43.0 (joints)"
+  },
+  "mount": [
+   39.0,
+   3.9,
+   93.9
+  ],
+  "head_part_change_deg": 24.8,
+  "head_part_change_axis_pelvis_XYZ": [
+   -0.505,
+   -0.668,
+   -0.546
+  ],
+  "cad_clearance_gait_x1": [
+   15.0,
+   "middle arm [mid2] <-> arm2 [leg1]"
+  ],
+  "cad_clearance_gait_xmax": [
+   9.31412136059945,
+   "middle arm [mid2] <-> middle arm [mid0]"
+  ]
+ },
+ "peak x1.9 (fragile)": {
+  "neutral": [
+   -15,
+   5,
+   20
+  ],
+  "gait_scale": 1.9,
+  "worst_scale_within_build_tolerance": 0.95,
+  "rom": {
+   "flex-": "-25.5 (ring_sep)",
+   "flex+": "+70.5 (excursion)",
+   "add-": "-26.5 (ring_sep)",
+   "add+": "+40.0 (joints)",
+   "rot-": "-18.0 (joints)",
+   "rot+": "+52.0 (joints)"
+  },
+  "mount": [
+   42.5,
+   14.6,
+   72.9
+  ],
+  "head_part_change_deg": 38.8,
+  "head_part_change_axis_pelvis_XYZ": [
+   -0.467,
+   -0.884,
+   -0.023
+  ],
+  "cad_clearance_gait_x1": [
+   14.917417799731618,
+   "middle arm [mid2] <-> middle arm [mid1]"
+  ],
+  "cad_clearance_gait_xmax": [
+   5.351850533942887,
+   "middle arm [mid2] <-> middle arm [mid1]"
+  ]
+ }
+}

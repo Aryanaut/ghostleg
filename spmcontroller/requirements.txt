@@ -1,0 +1,4 @@
+# Python 3.9+ (tested with 3.12)
+numpy>=1.22
+aiohttp>=3.9
+pyserial>=3.5

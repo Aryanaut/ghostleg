@@ -1,0 +1,6 @@
+## IDF Component Manager Manifest File
+## The three sensor drivers live in the local `components/` directory, so the
+## only dependency here is ESP-IDF itself.
+dependencies:
+  idf:
+    version: '>=4.1.0'

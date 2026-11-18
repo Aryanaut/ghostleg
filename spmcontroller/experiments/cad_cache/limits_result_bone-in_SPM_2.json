@@ -1,0 +1,252 @@
+{
+ "config": {
+  "min_ring_separation_deg": 18.3,
+  "joint_limits": {
+   "_source": "experiments/cad_collision.py on bone-in SPM 2.step: contact (< 0.3 mm) angles from the CAD pose = anatomical neutral; +-180 = never collides",
+   "ref_R_BE": [
+    [
+     0.960122871,
+     -0.065747598,
+     -0.271737603
+    ],
+    [
+     0.0,
+     0.971954989,
+     -0.23516696
+    ],
+    [
+     0.279578382,
+     0.225789177,
+     0.933196215
+    ]
+   ],
+   "elbow_deg": [
+    [
+     -16.0,
+     180.0
+    ],
+    [
+     -53.0,
+     175.0
+    ],
+    [
+     -180.0,
+     180.0
+    ]
+   ],
+   "wrist_deg": [
+    [
+     -166.0,
+     171.0
+    ],
+    [
+     -180.0,
+     180.0
+    ],
+    [
+     -180.0,
+     78.0
+    ]
+   ],
+   "margin_deg": 3.0
+  }
+ },
+ "detail": {
+  "ring_contact_sep_deg": [
+   16.83374821685186,
+   8.900552702226491,
+   8.933195514625368
+  ],
+  "elbow_deg": [
+   [
+    -16.0,
+    180.0
+   ],
+   [
+    -53.0,
+    175.0
+   ],
+   [
+    -180.0,
+    180.0
+   ]
+  ],
+  "wrist_deg": [
+   [
+    -166.0,
+    171.0
+   ],
+   [
+    -180.0,
+    180.0
+   ],
+   [
+    -180.0,
+    78.0
+   ]
+  ],
+  "pairs": {
+   "legs 1-2": [
+    [
+     "internal gear 108T [leg0]",
+     "arm2 [leg1]",
+     7.4
+    ],
+    [
+     "arm1 [leg0]",
+     "Helical 1M 108T [leg1]",
+     0.06
+    ],
+    [
+     "arm1 [leg0]",
+     "arm2 [leg1]",
+     0.0
+    ]
+   ],
+   "legs 2-3": [
+    [
+     "Helical 1M 108T [leg1]",
+     "arm3 [leg2]",
+     7.43
+    ],
+    [
+     "arm2 [leg1]",
+     "Helical 1M 108T [leg2]",
+     0.11
+    ],
+    [
+     "arm2 [leg1]",
+     "arm3 [leg2]",
+     0.39
+    ]
+   ],
+   "legs 1-3": [
+    [
+     "internal gear 108T [leg0]",
+     "Helical 1M 108T [leg2]",
+     7.3
+    ],
+    [
+     "internal gear 108T [leg0]",
+     "arm3 [leg2]",
+     15.0
+    ],
+    [
+     "arm1 [leg0]",
+     "Helical 1M 108T [leg2]",
+     0.17
+    ],
+    [
+     "arm1 [leg0]",
+     "arm3 [leg2]",
+     0.39
+    ]
+   ],
+   "elbow 1": [
+    [
+     "arm1 [leg0]",
+     "Part 12 [mid0]",
+     0.03
+    ],
+    [
+     "internal gear 108T [leg0]",
+     "Part 12 [mid0]",
+     15.0
+    ]
+   ],
+   "wrist 1": [
+    [
+     "Part 12 [mid0]",
+     "femur head",
+     1.0
+    ],
+    [
+     "Part 12 [mid0]",
+     "upper femur",
+     0.08
+    ],
+    [
+     "Part 12 [mid0]",
+     "lower femur",
+     15.0
+    ],
+    [
+     "Part 12 [mid0]",
+     "positioning key",
+     15.0
+    ]
+   ],
+   "elbow 2": [
+    [
+     "arm2 [leg1]",
+     "Part 13 [mid1]",
+     0.02
+    ],
+    [
+     "Helical 1M 108T [leg1]",
+     "Part 13 [mid1]",
+     13.13
+    ]
+   ],
+   "wrist 2": [
+    [
+     "Part 13 [mid1]",
+     "femur head",
+     1.0
+    ],
+    [
+     "Part 13 [mid1]",
+     "upper femur",
+     4.32
+    ],
+    [
+     "Part 13 [mid1]",
+     "lower femur",
+     15.0
+    ],
+    [
+     "Part 13 [mid1]",
+     "positioning key",
+     15.0
+    ]
+   ],
+   "elbow 3": [
+    [
+     "Helical 1M 108T [leg2]",
+     "Part 11 [mid2]",
+     12.94
+    ]
+   ],
+   "wrist 3": [
+    [
+     "Part 11 [mid2]",
+     "femur head",
+     1.0
+    ],
+    [
+     "Part 11 [mid2]",
+     "upper femur",
+     0.03
+    ],
+    [
+     "Part 11 [mid2]",
+     "lower femur",
+     15.0
+    ],
+    [
+     "Part 11 [mid2]",
+     "positioning key",
+     15.0
+    ]
+   ]
+  }
+ },
+ "general_min_mm": 1.3097561093481551,
+ "general_worst": [
+  85.0,
+  25.0,
+  -40.0,
+  "Part 11 [mid2]",
+  "Part 12 [mid0]"
+ ]
+}

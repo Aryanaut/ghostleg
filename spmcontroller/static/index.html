@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SPM Hip Controller</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="/static/style.css">
+<link rel="icon" href="data:,">
+<!-- three.js is vendored locally so the GUI works on a lab PC with no internet -->
+<script type="importmap">
+  { "imports": { "three": "/static/vendor/three.module.js" } }
+</script>
+</head>
+<body>
+<header>
+  <h1>SPM Hip Controller</h1>
+  <div id="badges">
+    <span id="b-conn" class="badge">disconnected</span>
+    <span id="b-home" class="badge">not homed</span>
+    <span id="b-arm" class="badge">disarmed</span>
+    <span id="b-safe" class="badge ok">safe</span>
+    <span id="b-rate" class="badge muted">rate-limited</span>
+  </div>
+  <button id="estop-reset" hidden title="Clear the latch after the hazard is removed (does not move the leg)">Reset E-stop</button>
+  <button id="estop" title="Emergency stop (Esc)">E-STOP <small>(Esc)</small></button>
+</header>
+
+<main>
+  <!-- ================= LEFT: control tabs ================= -->
+  <section id="left">
+    <nav class="tabs">
+      <button data-tab="t-conn" class="active">Connect</button>
+      <button data-tab="t-motion">Motion</button>
+      <button data-tab="t-geom">Geometry</button>
+      <button data-tab="t-setup">Driver setup</button>
+      <button data-tab="t-imu">IMU</button>
+    </nav>
+
+    <!-- ---------- Connection ---------- -->
+    <div id="t-conn" class="tab active">
+      <label>Serial port
+        <span class="row"><select id="port"></select><button id="refresh" class="small">↻</button></span>
+      </label>
+      <label>Baud
+        <select id="baud">
+          <option>9600</option><option>19200</option><option>38400</option>
+          <option>57600</option><option>115200</option><option>256000</option>
+        </select>
+      </label>
+      <label class="check"><input type="checkbox" id="simulate" checked> Simulate drivers (no hardware)</label>
+      <div class="row">
+        <button id="connect">Connect</button><button id="disconnect">Disconnect</button>
+      </div>
+
+      <h3>Start-up sequence</h3>
+      <ol class="steps">
+        <li><button id="torque-off">Torque OFF</button> so you can move the mechanism by hand.</li>
+        <li>Put the leg in <b>anatomical neutral</b> (it should match the 3D view at 0/0/0, ideally with a jig).</li>
+        <li><button id="set-home">Set home here</button> (needed after every power cycle).</li>
+        <li><button id="arm">ARM</button> to stream motion. <button id="disarm">Disarm</button> holds position.</li>
+      </ol>
+      <p class="hint">Arming snaps the command to the measured pose first, so the leg won't jump.</p>
+
+      <h3>After an E-stop</h3>
+      <ol class="steps">
+        <li>Find and remove the cause (jam, collision, wrong pose). The leg holds where it stopped.</li>
+        <li>If the log reports a stall: <button id="release-stalls">Release stalls</button></li>
+        <li><button id="estop-reset2">Reset E-stop</button> checks comms, stall state and that the
+          measured pose matches home, then sets all targets to the <b>current</b> pose. Nothing moves.</li>
+        <li>If it says home was cleared (drivers lost power): redo steps 1–3 above.</li>
+        <li><b>ARM</b>, then press Run / move a slider to resume.</li>
+      </ol>
+    </div>
+
+    <!-- ---------- Motion ---------- -->
+    <div id="t-motion" class="tab">
+      <div class="seg" id="mode-seg">
+        <button data-mode="pose" class="active">Pose</button>
+        <button data-mode="plane">Plane</button>
+        <button data-mode="gait">Gait</button>
+        <button data-mode="joint">Joint jog</button>
+      </div>
+
+      <div class="slider-row"><span>Max angular rate</span>
+        <input type="range" id="max-rate" min="5" max="360" step="5"><output></output><i>°/s</i></div>
+
+      <!-- View-only override: show poses the safety gate refuses. Only while
+           disarmed; ARM is blocked while it is on (enforced in the server). -->
+      <label class="check" id="view-override-row" title="Shows refused poses in the 3D view. Nothing is ever sent to the motors while this is on.">
+        <input type="checkbox" id="view-override"> View beyond limits <span class="hint">(viewing only: ARM is blocked)</span></label>
+
+      <!-- Pose -->
+      <div class="mode-panel" data-mode="pose">
+        <p class="hint">Clinical hip angles (ISB): flexion +, adduction +, internal rotation +.</p>
+        <div class="slider-row"><span>Flexion</span><input type="range" id="p-flex" min="-25" max="50" step="0.5" value="0"><output></output><i>°</i></div>
+        <div class="slider-row"><span>Adduction</span><input type="range" id="p-add" min="-25" max="25" step="0.5" value="0"><output></output><i>°</i></div>
+        <div class="slider-row"><span>Int. rotation</span><input type="range" id="p-rot" min="-30" max="30" step="0.5" value="0"><output></output><i>°</i></div>
+        <button id="p-zero" class="small">Back to neutral</button>
+      </div>
+
+      <!-- Plane -->
+      <div class="mode-panel" data-mode="plane" hidden>
+        <p class="hint">Swing the femur inside any plane through the hip centre. The plane is set by its
+          normal (= rotation axis): azimuth 0° = sagittal, 90° = frontal; elevation 90° = transverse (axial rotation).</p>
+        <div class="row wrap">
+          <button class="small preset" data-az="0" data-el="0">Sagittal</button>
+          <button class="small preset" data-az="90" data-el="0">Frontal</button>
+          <button class="small preset" data-az="0" data-el="90">Transverse</button>
+          <button class="small preset" data-az="45" data-el="0">Oblique 45°</button>
+        </div>
+        <div class="slider-row"><span>Azimuth</span><input type="range" id="pl-az" min="-180" max="180" step="1" value="0"><output></output><i>°</i></div>
+        <div class="slider-row"><span>Elevation</span><input type="range" id="pl-el" min="-90" max="90" step="1" value="0"><output></output><i>°</i></div>
+        <div class="slider-row"><span>Angle offset</span><input type="range" id="pl-off" min="-45" max="45" step="0.5" value="0"><output></output><i>°</i></div>
+        <div class="slider-row"><span>Amplitude</span><input type="range" id="pl-amp" min="0" max="45" step="0.5" value="0"><output></output><i>°</i></div>
+        <div class="slider-row"><span>Frequency</span><input type="range" id="pl-f" min="0.05" max="2" step="0.05" value="0.5"><output></output><i>Hz</i></div>
+        <label class="check"><input type="checkbox" id="pl-base"> Swing around the Pose-tab posture</label>
+        <div class="row"><button class="run">▶ Run</button><button class="pause">❚❚ Pause</button><button class="reset">⟲ Reset t</button></div>
+      </div>
+
+      <!-- Gait -->
+      <div class="mode-panel" data-mode="gait" hidden>
+        <p class="hint">Replays a hip gait cycle. The built-in curve is an <b>approximate textbook shape</b>
+          (~30° flex / ~10° ext, ~10° add / ~5° abd, small rotation). Load a CSV with real data for
+          quantitative work (columns: <code>phase,flex,add,rot</code>).</p>
+        <div class="slider-row"><span>Cycle period</span><input type="range" id="g-per" min="0.8" max="8" step="0.1" value="2"><output></output><i>s</i></div>
+        <div class="slider-row"><span>Scale flex</span><input type="range" id="g-sf" min="0" max="1.5" step="0.05" value="1"><output></output><i>×</i></div>
+        <div class="slider-row"><span>Scale add</span><input type="range" id="g-sa" min="0" max="1.5" step="0.05" value="1"><output></output><i>×</i></div>
+        <div class="slider-row"><span>Scale rot</span><input type="range" id="g-sr" min="0" max="1.5" step="0.05" value="1"><output></output><i>×</i></div>
+        <div class="row wrap">
+          <label class="file small">Load CSV…<input type="file" id="g-csv" accept=".csv,.txt" hidden></label>
+          <button id="g-builtin" class="small">Built-in curve</button>
+          <span id="g-label" class="hint"></span>
+        </div>
+        <canvas id="gait-plot" width="420" height="150"></canvas>
+        <div id="g-limits" class="hint"></div>
+        <div class="row"><button class="run">▶ Run</button><button class="pause">❚❚ Pause</button><button class="reset">⟲ Reset t</button></div>
+      </div>
+
+      <!-- Joint -->
+      <div class="mode-panel" data-mode="joint" hidden>
+        <p class="hint">Commissioning: move each RING directly (relative to home). Use small angles to check that
+          motor <i>n</i> drives leg <i>n</i> and turns the way the 3D view shows; otherwise flip its direction in Geometry.</p>
+        <div class="slider-row"><span>Ring 1</span><input type="range" id="j-0" min="-60" max="60" step="0.5" value="0"><output></output><i>°</i></div>
+        <div class="slider-row"><span>Ring 2</span><input type="range" id="j-1" min="-60" max="60" step="0.5" value="0"><output></output><i>°</i></div>
+        <div class="slider-row"><span>Ring 3</span><input type="range" id="j-2" min="-60" max="60" step="0.5" value="0"><output></output><i>°</i></div>
+        <button id="j-zero" class="small">All to home</button>
+      </div>
+    </div>
+
+    <!-- ---------- Geometry ---------- -->
+    <div id="t-geom" class="tab">
+      <p class="hint">Changes apply to the 3D preview immediately (only while disarmed). <b>Apply &amp; save</b> writes config.json.</p>
+      <table class="grid" id="geom-table">
+        <thead><tr><th></th><th>Leg 1</th><th>Leg 2</th><th>Leg 3</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <h3>Mount (base on pelvis)</h3>
+      <div class="form" id="mount-form"></div>
+      <!-- Mount + neutral together fix how the femur sits on the femur head.  Ticked: a mount
+           change recomputes neutral so the femur stays bolted on as in the CAD (= a real remount). -->
+      <label class="check" title="Untick only if you really mean to change how the femur is attached to the femur head">
+        <input type="checkbox" id="keep-femur" checked> Remount casing: keep the femur attached to the head
+        <span class="hint">(neutral is recomputed when only the mount changes)</span></label>
+      <h3>Neutral offset (effector, base frame)</h3>
+      <div class="form" id="neutral-form"></div>
+      <h3>Control</h3>
+      <div class="form" id="control-form"></div>
+      <h3>Safety limits</h3>
+      <div class="form" id="limits-form"></div>
+      <div class="row"><button id="geom-apply">Apply</button><button id="geom-save">Apply &amp; save</button></div>
+    </div>
+
+    <!-- ---------- Femur IMU board ---------- -->
+    <div id="t-imu" class="tab">
+      <p class="hint">The training board on the femur streams raw IMU data over USB. The laptop fuses it into the
+        femur's orientation and angular velocity: <b>tilt</b> is absolute (gravity); <b>heading</b> (rotation about
+        gravity) is gyro-only and is re-referenced to the encoders with <i>Align</i>.</p>
+      <label>Board port <span class="row"><input type="text" id="imu-port" placeholder="auto (USB VID 303A) - or SIM"></span></label>
+      <div class="row"><button id="imu-connect">Connect IMU</button><button id="imu-disconnect">Disconnect</button></div>
+      <h3>Mount calibration</h3>
+      <p class="hint">Rig must be homed and ARMED. The leg holds still at neutral, then rotates ±15° about the femoral
+        head's x and y axes and ±25° about z, comparing the encoders with the gyro to find how the board is mounted.
+        Saved to imu_cal.json (redo if the board is re-mounted).</p>
+      <div class="row"><button id="imu-cal">Calibrate mount (moves the leg)</button><button id="imu-align">Align heading now</button></div>
+      <div id="imu-cal-status" class="hint"></div>
+      <h3>Closed loop (optional)</h3>
+      <div class="slider-row"><span>IMU tilt trim</span><input type="range" id="imu-trim" min="0" max="3" step="0.1" value="0"><output></output><i>1/s</i></div>
+      <p class="hint">0 = monitor only. &gt; 0 integrates the IMU-measured tilt error into a correction (max 3°) of the
+        motor command, to take out backlash/compliance the motor encoders can't see.</p>
+      <h3>Board</h3>
+      <div id="imu-status"></div>
+      <pre id="imu-log"></pre>
+    </div>
+
+    <!-- ---------- Driver setup ---------- -->
+    <div id="t-setup" class="tab">
+      <p class="hint">New drivers all ship as <b>address 1 @ 38400</b>, in pulse mode. Wire up <b>one driver at a time</b>,
+        connect at 38400 (simulation off), then: <b>Configure</b> → <b>Set address</b> (1, 2, 3).
+        Optionally raise the baud to 115200 on each and reconnect at that rate.</p>
+      <label>Target address <input type="number" id="s-addr" min="1" max="255" value="1"></label>
+      <div class="row wrap">
+        <button data-setup="scan">Scan 1–10</button>
+        <button data-setup="configure">Configure (mode 05, 16 µstep, respond-only)</button>
+      </div>
+      <label>Working current (mA, optional, 57E ≤ 5200) <input type="number" id="s-cur" min="0" max="5200" placeholder="leave blank to keep"></label>
+      <div class="row"><label>New address <input type="number" id="s-new" min="1" max="255" value="2"></label>
+        <button data-setup="set_address">Set address</button></div>
+      <div class="row"><label>New baud <select id="s-baud"><option>38400</option><option selected>115200</option><option>256000</option></select></label>
+        <button data-setup="set_baud">Set baud</button></div>
+      <div class="row wrap">
+        <button data-setup="release_stall">Release stall</button>
+        <button data-setup="driver_zero">Driver zero (0x92)</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= CENTRE: 3D view ================= -->
+  <section id="view">
+    <div id="three"></div>
+    <div id="legend">
+      <span><i style="background:#e2843a"></i>commanded femur</span>
+      <span><i style="background:#58b8ff"></i>encoder femur</span>
+      <span><i style="background:#5fe08a"></i>IMU femur</span>
+      <span><i style="background:#ff5b5b"></i>X anterior</span>
+      <span><i style="background:#58d36b"></i>Y superior</span>
+      <span><i style="background:#5b7bff"></i>Z right</span>
+    </div>
+    <div id="view-btns">
+      <button class="small" data-view="front">Front</button>
+      <button class="small" data-view="side">Side</button>
+      <button class="small" data-view="top">Top</button>
+      <button class="small" data-view="iso">Iso</button>
+    </div>
+  </section>
+
+  <!-- ================= RIGHT: status ================= -->
+  <section id="right">
+    <h3>Hip angles</h3>
+    <table class="grid small-t">
+      <thead><tr><th></th><th>cmd</th><th>encoder</th><th>IMU</th></tr></thead>
+      <tbody>
+        <tr><td>Flexion</td><td id="a-f">–</td><td id="m-f">–</td><td id="i-f">–</td></tr>
+        <tr><td>Adduction</td><td id="a-a">–</td><td id="m-a">–</td><td id="i-a">–</td></tr>
+        <tr><td>Int. rot</td><td id="a-r">–</td><td id="m-r">–</td><td id="i-r">–</td></tr>
+      </tbody>
+    </table>
+    <h3>Angular velocity (IMU, pelvis axes)</h3>
+    <div id="omega" class="small-t"></div>
+    <h3>Rings / motors</h3>
+    <table class="grid small-t">
+      <thead><tr><th></th><th>ring Δ°</th><th>cmd cnt</th><th>enc cnt</th></tr></thead>
+      <tbody id="motor-rows"></tbody>
+    </table>
+    <h3>Safety</h3>
+    <div id="metrics"></div>
+    <div id="mode-info" class="hint"></div>
+    <h3>Log</h3>
+    <pre id="log"></pre>
+  </section>
+</main>
+<div id="toast"></div>
+<script type="module" src="/static/app.js"></script>
+</body>
+</html>

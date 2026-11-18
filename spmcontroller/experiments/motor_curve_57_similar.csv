@@ -1,0 +1,15 @@
+# Pull-out torque curve of a 57 mm stepper SIMILAR in size to the rig's motor (user-supplied screenshot, 2026-11-18).
+# NOT the MKS SERVO57E's own curve. Test conditions: DM556T open-loop driver, 24 VDC, 2.69 A peak, 2000 pulses/rev.
+# "Typical values. Actual performance depends on the driver and supply." Values read from the factory chart.
+# The rig's motor is rated 1.8 N m stall (user). Below 20 rpm the script holds the 20 rpm value.
+rpm,torque_Ncm
+20,170.0
+35,183.0
+50,186.9
+100,147.0
+150,75.5
+200,65.7
+250,55.4
+300,46.8
+350,38.0
+400,30.3

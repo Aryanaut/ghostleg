@@ -1,0 +1,4 @@
+# Training Board defaults (applied when sdkconfig lacks these options)
+CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
+CONFIG_FATFS_LFN_HEAP=y
+CONFIG_FATFS_MAX_LFN=255

@@ -1,0 +1,24 @@
+Espressif port found: COM3
+INFO frame received: True  odr=240 Hz  accel 0.4880 mg/LSB  gyro 70.00 mdps/LSB
+IMU frames: 6916 in 30 s  -> 230.5 Hz | seq gaps 0 | CRC errors 0 | board-side drops 487257 | uptime 1526.0 s
+mag frames: 3003  last mag [uT] = [5.96923828125, -32.977294921875, -23.773193359375]
+firmware t_us (nominal clock): dt mean 4.347 ms, min 4.166, max 254.294  (5 re-anchor jumps)
+host corrected time:           dt mean 4.327 ms, min 4.167, max 4.342
+TRUE sample rate (host SampleClock): 230.352 Hz  converged=True  envelope rms 1.053 ms  -> nominal/true = 1.0419
+cross-check (board esp_timer vs seq, 30 INFO frames): 230.350 Hz  (differs from host estimate by 0.001%)
+accel mean [g] = [ 0.1896  0.8714 -0.444 ]  |a| = 0.9962 g  std [0.62 1.02 1.33] mg
+gyro  mean [dps] = [-0.399 -0.158 -0.458]  std [0.211 0.5   0.33 ] dps
+board 'up' axis (sensor frame) = [ 0.19   0.875 -0.446]  -> tilt of sensor z from vertical 116.5 deg
+--- last board log lines ---
+  I (1523009) main: tx 231 pkts (230.3 Hz) total=347960 | int=231 poll=0 empty=0 partial=0 spi_err=0 uart_err=0 | isr->uart avg 191.3 us max 305 us (>1ms: 0, >5ms: 0) | fifo max_drain=1 overruns=0 | last age 3 ms
+  I (1523010) main: last sample: xl[mg]=(189, 871, -446) hg[mg]=(334, 654, -474) gy[dps]=(-0.35, 0.00, -0.21) temp=25.0 C flags=0x07
+  I (1523012) main: log: 101 rec/s total=151057 | sd drops=0 err=0 max 0 us (fwrite 0, fsync 0, card-writes 0) | nor rec=0 drops=0 err=0 max_write 0 us pending=0 KB free 16380 KB (~35 min) armed buffered=101 | baro 1011.20 hPa 32.6 C | mag (6.0, -33.3, -24.0) uT
+  I (1524013) main: tx 232 pkts (231.1 Hz) total=348192 | int=232 poll=0 empty=0 partial=0 spi_err=0 uart_err=0 | isr->uart avg 194.5 us max 304 us (>1ms: 0, >5ms: 0) | fifo max_drain=1 overruns=0 | last age 0 ms
+  I (1524013) main: last sample: xl[mg]=(189, 871, -445) hg[mg]=(303, 654, -490) gy[dps]=(-0.42, -0.07, -0.21) temp=25.0 C flags=0x07
+  I (1524014) main: log: 100 rec/s total=151157 | sd drops=0 err=0 max 0 us (fwrite 0, fsync 0, card-writes 0) | nor rec=0 drops=0 err=0 max_write 0 us pending=0 KB free 16380 KB (~35 min) armed buffered=101 | baro 1011.22 hPa 32.6 C | mag (5.6, -33.0, -23.7) uT
+  I (1525015) main: tx 230 pkts (229.5 Hz) total=348422 | int=231 poll=0 empty=0 partial=0 spi_err=0 uart_err=0 | isr->uart avg 193.7 us max 270 us (>1ms: 0, >5ms: 0) | fifo max_drain=1 overruns=0 | last age 4 ms
+  I (1525016) main: last sample: xl[mg]=(189, 872, -445) hg[mg]=(306, 666, -490) gy[dps]=(-0.49, -0.21, 0.00) temp=25.0 C flags=0x07
+  I (1525016) main: log: 100 rec/s total=151257 | sd drops=0 err=0 max 0 us (fwrite 0, fsync 0, card-writes 0) | nor rec=0 drops=0 err=0 max_write 0 us pending=0 KB free 16380 KB (~35 min) armed buffered=101 | baro 1011.23 hPa 32.6 C | mag (5.8, -33.2, -23.6) uT
+  I (1526017) main: tx 231 pkts (230.5 Hz) total=348653 | int=230 poll=0 empty=0 partial=0 spi_err=0 uart_err=0 | isr->uart avg 191.4 us max 346 us (>1ms: 0, >5ms: 0) | fifo max_drain=1 overruns=0 | last age 3 ms
+  I (1526017) main: last sample: xl[mg]=(190, 871, -444) hg[mg]=(310, 677, -494) gy[dps]=(-0.35, 0.70, -0.56) temp=25.0 C flags=0x07
+  I (1526020) main: log: 100 rec/s total=151357 | sd drops=0 err=0 max 0 us (fwrite 0, fsync 0, card-writes 0) | nor rec=0 drops=0 err=0 max_write 0 us pending=0 KB free 16380 KB (~35 min) armed buffered=101 | baro 1011.22 hPa 32.6 C | mag (5.7, -33.0, -23.6) uT

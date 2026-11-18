@@ -1,0 +1,96 @@
+{
+  "geometry": {
+    "_help": "Angles in degrees, one value per leg (leg i is driven by motors[i]). alpha1: ring axis(-z) -> middle joint axis. alpha2: middle joint axis -> head joint axis. beta: effector axis -> head joint axis. eta: azimuth of each head joint around the effector axis. branch: +1/-1 elbow direction of each leg (flip if the 3D view doesn't match the CAD at home).",
+    "alpha1_deg": [
+      50,
+      50,
+      50
+    ],
+    "alpha2_deg": [
+      90,
+      90,
+      90
+    ],
+    "beta_deg": [
+      90,
+      90,
+      90
+    ],
+    "eta_deg": [
+      0,
+      120,
+      240
+    ],
+    "branch": [
+      1,
+      1,
+      1
+    ]
+  },
+  "mount": {
+    "_help": "How the SPM base sits on the pelvis. The ring axis (base -> head) points laterally, tipped down by tilt_down_deg and swung forward by forward_deg. base_twist_deg spins the base about its own axis.",
+    "side": "right",
+    "tilt_down_deg": 45,
+    "forward_deg": 20,
+    "base_twist_deg": 0
+  },
+  "neutral": {
+    "_help": "Effector orientation (in the base frame) that corresponds to anatomical neutral, as small rotations from the symmetric home.",
+    "tilt_x_deg": 0,
+    "tilt_y_deg": 0,
+    "twist_deg": 0
+  },
+  "femur": {
+    "neck_length_m": 0.05,
+    "mech_length_m": 0.42,
+    "head_radius_m": 0.024
+  },
+  "motors": [
+    {
+      "address": 1,
+      "direction": 1
+    },
+    {
+      "address": 2,
+      "direction": 1
+    },
+    {
+      "address": 3,
+      "direction": 1
+    }
+  ],
+  "control": {
+    "gear_ratio": 4.0,
+    "loop_hz": 50,
+    "max_rate_deg_s": 90,
+    "sync_threshold_deg": 0.5,
+    "acc": 250,
+    "min_motor_rpm": 2,
+    "max_motor_rpm": 600,
+    "speed_headroom": 1.3,
+    "read_feedback": true
+  },
+  "limits": {
+    "_help": "Safety gate. Poses failing any check are refused and the last safe pose is held. Tune min_ring_separation_deg and max_tilt_deg from the CAD (link collisions are NOT modelled otherwise).",
+    "max_tilt_deg": 45,
+    "min_leg_margin": 0.02,
+    "min_parallel_index": 0.15,
+    "min_serial_index": 0.15,
+    "min_ring_separation_deg": 40,
+    "max_ring_excursion_deg": 120
+  },
+  "serial": {
+    "port": "COM3",
+    "baud": 38400
+  },
+  "visual": {
+    "r_prox_m": 0.055,
+    "r_dist_m": 0.07
+  },
+  "imu": {
+    "_help": "Femur IMU board over USB. trim_gain (1/s) > 0 closes an outer loop on the IMU-measured TILT error (0 = monitor only). trim_limit_deg caps the correction.",
+    "port": "",
+    "trim_gain": 0.0,
+    "trim_limit_deg": 3.0
+  }
+}

@@ -1,0 +1,35 @@
+From f474fb4233cc4781b04d45a04d3dee2a0b81321f Mon Sep 17 00:00:00 2001
+From: Marcus <marcus_quek2@mymail.sutd.edu.sg>
+Date: Tue, 17 Nov 2026 22:21:29 +0800
+Subject: [PATCH 2/2] docs: describe the USB sensor stream
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01GokjBjLdGgMBmUBMSAFEQa
+---
+ MARCUS-ESP32-DEV-BOARD-Software/README.md | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/MARCUS-ESP32-DEV-BOARD-Software/README.md b/MARCUS-ESP32-DEV-BOARD-Software/README.md
+index 75ce661..c2df421 100755
+--- a/MARCUS-ESP32-DEV-BOARD-Software/README.md
++++ b/MARCUS-ESP32-DEV-BOARD-Software/README.md
+@@ -26,6 +26,16 @@ Avionics C consumes that stream instead of its onboard IMU.
+   Stats are printed once per second: packets sent, rate, interrupt vs. poll
+   fallbacks, SPI/UART errors, and the last sample.
+ 
++## Raw sensor stream over USB (branch `spm-imu-usb-stream`, SPM hip rig)
++
++On this branch the board also streams every IMU sample (240 Hz, raw LSB), the magnetometer
++(~100 Hz) and a 1 Hz INFO frame (scale factors, drop counters) over the native USB port.
++Everything on that port is framed: `A5 96 | type | len | payload | CRC-16/CCITT-FALSE (LE)`.
++ESP_LOG text is wrapped in TEXT frames so logs never corrupt samples. See `main/usb_stream.h`.
++The UART link to Avionics C is unchanged. The host side lives in the spmcontroller repo
++(`spm/imu_board.py`). When nothing has the port open, frames are dropped (counted in INFO),
++and the PC discards the stale buffered frames it receives when the port is opened.
++
+ ## Datalogging (SD card + NOR flash)
+ 
+ Besides streaming the IMU, the board logs an 80-byte record every 10 ms
+-- 
+2.43.0
+

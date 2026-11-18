@@ -12,3 +12,6 @@ design requirements:
 - motor peak current is unlikely to exceed 30A, use mosfet JMSL0302AG. package and pinout of mosfets in schematic are compatible.
 - all other components to be kept the same
 - CANbus for communication
+
+notes:
+- Skipping the thermistors and temperature senseing section.
